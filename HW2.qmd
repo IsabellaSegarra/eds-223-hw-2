@@ -1,5 +1,74 @@
 ---
-title: "HW2"
-format: html
+title: "EDS-223 Homework Assignment #2"
+author: "Isabella Segarra"
+date: 10-06-2025
+format: 
+  pdf: default 
+  html: default
+theme: pandoc
+execute: 
+  warning: false
+  message: false
 ---
+
+# Exploring Patterns of Environmental Justice
+
+### Objective
+
+There are three datasets used in this project: 
+1. EJSCREEN: data is from the United States Environmental Protection Agency’s former EJScreen: Environmental Justice Screening and Mapping Tool. 
+2. HOLC Redlining: data is from Digital Scholarship Lab at the University of Richmond depicting the Home Owners’ Loan Corporation (HOLC) New Deal policy and subsequent, redlining. 
+3. Biodiversity observations: data is from the Global Biodiversity Information Facility and contains observations on bird abundance.
+
+## Environment Set-up 
+```{r}
+#|output: false
+
+# Load relevant libraries
+library(sf) # For vector data
+library(stars) # For raster data 
+library(tmap) # For static and interactive maps
+library(here) # For importing data 
+library(tidyverse) # For data cleaning
+library(dplyr) # For filtering data 
+
+
+# If the libraries are not installed, please install the below packages: 
+
+# install.packages("sf")
+# install.packages("stars")
+# install.packages("tmap")
+# install.packages("here")
+# install.packages("tidyverse")
+# install.packages("dplyr")
+
+```
+
+## Load in Data 
+```{r}
+# Load in EJSCREEN data for data on census blocks 
+ejscreen <- sf::st_read(here::here("data", "ejscreen","EJSCREEN_2023_BG_StatePct_with_AS_CNMI_GU_VI.gdb"))
+
+# Load in HOLC Redlining data
+redlining <- sf::st_read(here::here("data", "mapping-inequality", "mapping-inequality-los-angeles.json"))
+
+# Load in Bird Observations data 
+bird_obs <- sf::st_read(here::here("data", "gbif-birds-LA", "gbif-birds-LA.shp"))
+
+```
+
+## Part 1: Legacy of redlining in current environmental (in)justice
+
+### Objective: 
+Explore historical redlining in Los Angeles and its legacy on present-day environmental justice.
+
+```{r}
+#......Create a map of historical redlining neighborhoods......
+
+tm_shape(redlining) + # Map layer of redlined neighborhoods 
+  tm_borders() + 
+  tm_polygons(fill = "fill")+
+  tm_basemap("Open Street Map")
+
+```
 
