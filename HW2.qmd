@@ -11,7 +11,7 @@ execute:
   message: false
 ---
 
-# Exploring Patterns of Environmental Justice
+# Exploring Patterns of Environmental Justice: Redlining and Biodiversity 
 
 ### Objective
 
@@ -31,6 +31,7 @@ library(tmap) # For static and interactive maps
 library(here) # For importing data 
 library(tidyverse) # For data cleaning
 library(dplyr) # For filtering data 
+library(paletteer) # For pretty colors 
 
 
 # If the libraries are not installed, please install the below packages: 
@@ -46,6 +47,8 @@ library(dplyr) # For filtering data
 
 ## Load in Data 
 ```{r}
+#|output: false
+
 # Load in EJSCREEN data for data on census blocks 
 ejscreen <- sf::st_read(here::here("data", "ejscreen","EJSCREEN_2023_BG_StatePct_with_AS_CNMI_GU_VI.gdb"))
 
@@ -62,13 +65,160 @@ bird_obs <- sf::st_read(here::here("data", "gbif-birds-LA", "gbif-birds-LA.shp")
 ### Objective: 
 Explore historical redlining in Los Angeles and its legacy on present-day environmental justice.
 
+#### Map 1: Historical Redlining of Neighborhoods in Los Angeles, CA
+
 ```{r}
 #......Create a map of historical redlining neighborhoods......
 
-tm_shape(redlining) + # Map layer of redlined neighborhoods 
-  tm_borders() + 
-  tm_polygons(fill = "fill")+
-  tm_basemap("Open Street Map")
+redlining_map <- tm_shape(redlining) + # Map layer of redlined neighborhoods
+  tm_borders() +
+  tm_polygons(fill = "grade", 
+              palette = c("")) + # Fill in polygons based on HOLC grade
+  tm_legend(title = "HOLC Grade", size = 0.5) + # Add map legend
+  tm_title(
+    "Historical Redlining of Neighborhoods in Los Angeles, CA",
+    size = 1,
+    fontface = "bold"
+  ) + # Add title and subtitle
+  tm_title("Data source: Digital Scholarship Lab (University of Richmond)") +
+  #tm_graticules() +
+  tm_scalebar() + # Add scalebar
+  tm_compass(position = c("left", "bottom")) + # Add compass
+  tm_basemap("CartoDB.PositronNoLabels") # Add basemap 
+  
+redlining_map # View map
 
+```
+#### Summary table
+In order to work with the EJ Screen and Redlining/HOLC dataset as one dataset, I need to first check if 
+```{r}
+#......CRS Matching ......
+
+# Check that the CRS for 'ejscreen' and 'redlining' match
+st_crs(ejscreen) # EPSG 3857
+st_crs(redlining) # EPSG 4326
+
+# Another way to check CRS 
+st_crs(ejscreen) == st_crs(redlining) # FALSE
+
+# Transform the CRS of ejscreen to match redlining
+ejscreen_transform <- st_transform(ejscreen, crs = st_crs(redlining))
+
+# Check CRS of ejscreen 
+st_crs(ejscreen_transform) == st_crs(redlining) # TRUE
+
+# Check is CRS of `bird_obs` match 
+st_crs(bird_obs) #CRS match!! #ADD AS A PRINT STATEMENT 
+
+```
+
+```{r}
+#......Filter EJ Screen data......
+
+# Filter to all data from Los Angeles County 
+
+la_ejscreen <- ejscreen_transform %>%
+  dplyr::filter(CNTY_NAME == "Los Angeles County") %>% 
+  janitor::clean_names()
+
+
+```
+
+```{r}
+#......Checking for invalid geometries......
+
+# Check for 'la_ejscreen' invalid geometries
+st_is_valid(la_ejscreen)
+which(!st_is_valid(la_ejscreen))
+la_ejscreen <- st_make_valid(la_ejscreen)
+
+# Check for 'redlining' invalid geometries
+st_is_valid(redlining)
+which(!st_is_valid(redlining))
+redlining <- st_make_valid(redlining)
+```
+
+
+```{r}
+#......Join Los Angeles ejscreen with redlining data......
+
+# Use st_joins to keep the 
+
+# if we want to keep the census block group, st_filter() will drop rows we ar enot interested in 
+# think of it as 'clipping' 
+la_redlining <- st_join(x = redlining, y = la_ejscreen, join = st_intersects) %>% 
+  st_drop_geometry()
+
+head(la_redlining)
+```
+```{r}
+# Map of Ej screen in LA 
+```
+
+
+
+```{r}
+#........Summary tables........
+
+# The percentage of census block groups that fall within each HOLC grade
+
+tot_grade <- nrow(la_redlining["grade"])
+
+census_block_grade <- la_redlining %>% 
+  group_by(grade) %>% 
+  summarize(percent_grade = n()/tot_grade * 100)
+ 
+# Add visualization
+
+census_block_grade
+
+# The percent of census block groups that don’t fall within a HOLC grade (use st_disjoin)
+tot_not_grade <- nrow(la_redlining["grade"])
+
+census_block_grade <- la_redlining %>% 
+  group_by(grade) %>% 
+  summarize(percent_not_grade = n()/tot_grade * 100)
+
+# 
+```
+
+#### Visualizations 
+
+##### % Low Income 
+```{r}
+la_redlining %>%  group_by(grade) %>% 
+  summarize(low_income = sum(lowincome))  
+
+```
+
+##### Percentile Particle Matter 2.5 
+```{r}
+
+```
+
+## Part 2: Legacy of redlining in biodiversity observations
+
+```{r}
+#........Join redlining with birds.........
+
+# Check for invalid geometries in 'bird_obs'
+
+st_is_valid(bird_obs)
+which(!st_is_valid(bird_obs))
+bird_obs <- st_make_valid(bird_obs)
+
+# Join dataset 
+
+bird_by_grade <- st_join(ineq_st, bird) %>% 
+  mutate(total_rows = n()) %>% # Saving the total number of rows for summarise function
+  group_by(grade) %>% 
+  summarise(perc_grade = round((n()/first(total_rows)*100), 2)) # summarising count / total 
+
+bird_redlining <- st_join(redlining, bird_obs) %>%
+  mutate(total_rows = n()) %>% 
+  group_by(grade) %>%
+  summarise(perc_grade = n()/first(total_rows) * 100)
+
+# make bar graph of grades 
 ```
 
