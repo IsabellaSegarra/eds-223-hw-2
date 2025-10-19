@@ -1,7 +1,7 @@
 # eds-223-hw-2
 This repository is for EDS-223 homework assignment 2. 
 
-# Exploring an Environmental Justice Issue: Diesel and Ozone Pollution in California's Central Valley
+# Exploring Patterns of Environmental Justice
 
 ## Contributor:
 
@@ -10,12 +10,12 @@ Barbara)
 
 ## Contents:
 
-This repository's purpose is for homework assignment #1 for EDS 223
+This repository's purpose is for homework assignment #2 for EDS 223
 (Geospatial Analysis and Remote Sensing). It contains the following file
 structure:
-- [Environmental Justice Quarto
-document](https://github.com/IsabellaSegarra/eds-223-hw-1/blob/f5bfff77f71c3dc81526d8b009e64002b65a18bf/ej_screen.qmd):
-Contains the rendered maps as an HTML. 
+- [Redlining in Los Angeles County Quarto
+document](https://github.com/IsabellaSegarra/eds-223-hw-2/blob/c2e3425c5feada3af55e6e554de6597cfe8fa2d2/HW2.qmd):
+Contains the rendered map and figures as an HTML. 
 - [Environemntal Justice
 PDF](link) 
 - Data: Contains the following folders: 

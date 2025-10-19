@@ -1,0 +1,339 @@
+---
+title: "Exploring Patterns of Environmental Justice: Redlining and Biodiversity"
+author: "Isabella Segarra"
+date: 10-06-2025
+format: 
+  pdf: default 
+  html: default
+theme: pandoc
+execute: 
+  warning: false
+  message: false
+---
+
+# EDS-223 Homework Assignment #2
+
+### Objective
+
+There are three datasets used in this project: 
+1. EJSCREEN: data is from the United States Environmental Protection Agency’s former EJScreen: Environmental Justice Screening and Mapping Tool. 
+2. HOLC Redlining: data is from Digital Scholarship Lab at the University of Richmond depicting the Home Owners’ Loan Corporation (HOLC) New Deal policy and subsequent, redlining. 
+3. Biodiversity observations: data is from the Global Biodiversity Information Facility and contains observations on bird abundance.
+
+## Environment Set-up 
+```{r}
+#| output: false
+
+# Load relevant libraries
+library(sf) # For vector data
+library(stars) # For raster data 
+library(tmap) # For static and interactive maps
+library(here) # For importing data 
+library(tidyverse) # For data cleaning
+library(dplyr) # For filtering data 
+library(paletteer) # For pretty colors 
+
+
+# If the libraries are not installed, please install the below packages: 
+
+# install.packages("sf")
+# install.packages("stars")
+# install.packages("tmap")
+# install.packages("here")
+# install.packages("tidyverse")
+# install.packages("dplyr")
+
+```
+
+## Load in Data 
+```{r}
+#|output: false
+
+# Load in EJSCREEN data for data on census blocks 
+ejscreen <- sf::st_read(here::here("data", "ejscreen","EJSCREEN_2023_BG_StatePct_with_AS_CNMI_GU_VI.gdb"))
+
+# Load in HOLC Redlining data
+redlining <- sf::st_read(here::here("data", "mapping-inequality", "mapping-inequality-los-angeles.json"))
+
+# Load in Bird Observations data 
+bird_obs <- sf::st_read(here::here("data", "gbif-birds-LA", "gbif-birds-LA.shp"))
+
+```
+
+## Part 1: Legacy of redlining in current environmental (in)justice
+
+### Objective: 
+Explore historical redlining in Los Angeles and its legacy on present-day environmental justice.
+
+#### Map 1: Historical Redlining of Neighborhoods in Los Angeles, CA
+
+```{r}
+#......Create a map of historical redlining neighborhoods......
+
+redlining_map <- tm_shape(redlining) + # Map layer of redlined neighborhoods
+  tm_borders() +
+  tm_polygons(fill = "grade", 
+              palette = c("#003049", "#fcbf49", "#f77f00", "#d62828")) + # Fill in polygons based on HOLC grade
+  tm_legend(title = "HOLC Grade", size = 0.5) + # Add map legend
+  tm_title(
+    "Historical Redlining of Neighborhoods in Los Angeles, CA",
+    size = 1,
+    fontface = "bold"
+  ) + # Add title and subtitle
+  tm_title("Data source: Digital Scholarship Lab (University of Richmond)") +
+  #tm_graticules() +
+  tm_scalebar() + # Add scalebar
+  tm_compass(position = c("left", "bottom")) + # Add compass
+  tm_basemap("CartoDB.PositronNoLabels") # Add basemap 
+  
+redlining_map # View map
+
+# Save map 
+
+```
+#### Summary table
+In order to work with the EJ Screen and Redlining/HOLC dataset as one dataset, I need to first check if the coordinate refrence system (CRS) match. 
+```{r}
+#| output: false
+#......CRS Matching ......
+
+# Check that the CRS for 'ejscreen' and 'redlining' match
+st_crs(ejscreen) # EPSG 3857
+st_crs(redlining) # EPSG 4326
+
+# Another way to check CRS 
+st_crs(ejscreen) == st_crs(redlining) # FALSE
+
+# Transform the CRS of ejscreen to match redlining
+ejscreen_transform <- st_transform(ejscreen, crs = st_crs(redlining))
+
+# Check CRS of ejscreen 
+st_crs(ejscreen_transform) == st_crs(redlining) # TRUE
+
+# Check is CRS of `bird_obs` match 
+st_crs(bird_obs) 
+
+```
+
+```{r}
+#| echo: false
+if(st_crs(ejscreen_transform) == st_crs(redlining)){
+  print("CRS Match!")
+} else{
+  warning("CRS do not match!")
+}
+
+```
+
+```{r}
+#| echo: false
+if(st_crs(bird_obs) == st_crs(redlining)){
+  print("CRS Match!")
+} else{
+  warning("CRS do not match!")
+}
+
+```
+
+For the purposes of this assignment, the EJ Screen data only needs to show Los Angeles County. 
+```{r}
+#......Filter EJ Screen data......
+
+# Filter to all data from Los Angeles County 
+
+la_ejscreen <- ejscreen_transform %>%
+  dplyr::filter(CNTY_NAME == "Los Angeles County") %>% 
+  janitor::clean_names()
+
+
+```
+
+In order to combine the EJ Screen and the Redlining data, I need to make sure there are no invalid geometries that can prevent the joining of the data. 
+```{r}
+#| output: false 
+
+#......Checking for invalid geometries......
+
+# Check for 'la_ejscreen' invalid geometries
+st_is_valid(la_ejscreen)
+which(!st_is_valid(la_ejscreen))
+
+# Make geometries valid 
+la_ejscreen <- st_make_valid(la_ejscreen)
+
+# Check for 'redlining' invalid geometries
+st_is_valid(redlining)
+which(!st_is_valid(redlining))
+
+# Make geometries valid 
+redlining <- st_make_valid(redlining)
+
+
+```
+Now, finally join the data!
+```{r}
+#......Join Los Angeles ejscreen with redlining data......
+
+# Use 'st_join()' because you want to utilize the geometries of redlining while keeping the columns of ej screen
+
+la_redlining <- st_join(x = redlining, y = la_ejscreen, join = st_intersects) %>% 
+  st_drop_geometry()
+
+# View the new dataframe 
+head(la_redlining)
+```
+
+```{r}
+#........Summary tables........
+
+# The percentage of census block groups that fall within each HOLC grade
+
+tot_grade <- nrow(la_redlining["grade"])
+
+census_block_grade <- la_redlining %>% 
+  group_by(grade) %>% 
+  summarize(percent_grade = n()/tot_grade * 100)
+ 
+# Add visualization
+
+percent_grade_census <- ggplot(census_block_grade, aes(x = grade, y = percent_grade, fill = grade)) +
+  geom_col() +
+  scale_fill_manual(values = c( "A" = "#003049", "B" = "#fcbf49", "C" = "#f77f00",
+                                "D" = "#d62828")) + 
+  labs( x = "HOLC Grade", 
+       y = "Percent of Census Groups in HOLC Grade", 
+       title = "Percentage of Census Block Groups within each HOLC Grade in Los Angeles County ") +
+  theme_minimal()
+
+# View figure
+percent_grade_census
+
+# Save figure 
+ggsave(percent_grade_census,
+       here::here("figs", "percent_grade_census.png"))
+```
+
+```{r}
+census_block_grade
+
+# The percent of census block groups that don’t fall within a HOLC grade (use st_disjoin
+
+la_redlining_disjoin <- st_join(x = redlining, y = la_ejscreen, join = st_disjoint) %>% 
+  st_drop_geometry()
+```
+
+#### Visualizations 
+
+##### % Low Income 
+```{r}
+# Group the 'la_redlining' data by HOLC grade and get the mean of the 'lowincome' variable.
+
+low_income <- la_redlining %>% group_by(grade) %>% 
+  summarize(low_income_mean = mean(lowincome, na.rm = TRUE)) 
+
+# Plot 'low_income' data
+
+low_income_grade_plot <- ggplot(low_income, aes(x = grade, y = low_income_mean, fill = grade)) +
+  geom_col() +
+  scale_fill_manual(values = c( "A" = "#003049", "B" = "#fcbf49", "C" = "#f77f00",
+                                "D" = "#d62828")) +
+  labs( x = "HOLC Grade", 
+       y = "Percent Low Income", 
+       title = "Percentage of Low-Income Residents by HOLC Grade in Los Angeles County") +
+  theme_minimal()
+
+# View plot
+low_income_grade_plot 
+
+# Save figure 
+ggsave(low_income_grade_plot,
+       here::here("figs", "low_income_grade_plot.png"))
+```
+
+##### Percentile Particle Matter 2.5 
+```{r}
+# Group the 'la_redlining' data by HOLC grade and get the mean of the 'pm25' variable.
+
+pm_25_grade <- la_redlining %>% group_by(grade) %>% 
+  summarize(pm_25_mean = mean(pm25, na.rm = TRUE)) 
+
+# Plot 'pm_25_grade' data
+
+library(scales)
+
+ggplot(pm_25_grade, aes(x = grade, y = pm_25_mean, fill = grade)) +
+  geom_col() +
+  scale_y_continuous(labels = label_number(accuracy = 0.0001))+
+ stat_summary(fun = mean, geom = "point",
+               color = "black", shape = 18, size = 1) + 
+  scale_fill_manual(values = c( "A" = "#003049", "B" = "#fcbf49", "C" = "#f77f00",
+                                "D" = "#d62828")) +
+  labs( x = "HOLC Grade", 
+       y = "Particulate Matter 2.5 (µm) ", 
+       title = "PM2.5 Concentrations by HOLC Grade in Los Angeles County") +
+  theme_minimal()
+
+# View plot
+pm_25_grade_plot 
+
+# Save figure 
+ggsave(pm_25_grade_plot,
+       here::here("figs", "pm_25_grade_plot.png"))
+```
+#### My results
+
+In the graph "Percentage of Low-Income Residents by HOLC Grade in Los Angeles County", we see that HOLC grades C-D have more low-income residents. This coincides with the Home Owners’Loan Corporation zoning that led to reduced investments in grades C and D (University of Richmond, 2023). This reducing in investments and subsequent "redlining" led to a reduced income for residents in those regions of Los Angeles county. In addition to reduced income and limited community resources, these communities also have to face environmental injusticies. In the graph "PM2.5 Concentrations by HOLC Grade in Los Angeles County", we see that all Los Angeles counties had an average of 10 µm of particulate matter 2.5 (PM 2.5) pollution. This reflects the present-day pollution issue within Los Angeles county. In the context of the HOLC grade, those in grades C and D show a slightly higher average of PM 2.5, displaying once again, the relationship between environmental justice and limited resources funneled to communities that are within the redlining districts. 
+
+
+## Part 2: Legacy of redlining in biodiversity observations
+
+```{r}
+#........Join redlining with birds.........
+
+# Check for invalid geometries in 'bird_obs'
+
+st_is_valid(bird_obs)
+which(!st_is_valid(bird_obs))
+bird_obs <- st_make_valid(bird_obs)
+
+# Check work
+
+#expect_equal(bird_obs)
+
+```
+
+```{r}
+# Join dataset 
+
+bird_redlining <- st_join(redlining, bird_obs) %>%
+  mutate(total_rows = n()) %>% 
+  group_by(grade) %>%
+  summarise(perc_grade = n()/first(total_rows) * 100)
+
+
+```
+
+```{r}
+bird_redlining <- st_join(redlining, bird_obs) %>%
+  mutate(total_rows = n()) %>% 
+  group_by(grade) %>%
+  summarise(perc_grade = n()/first(total_rows) * 100)
+```
+
+bird_redlining <- st_join(redlining, bird_obs) %>%
+  mutate(total_rows = n()) %>% 
+  group_by(grade) %>%
+  summarise(perc_grade = n()/first(total_rows) * 100)
+
+
+```{r}
+# ........Graph of .........
+# make bar graph of grades 
+
+
+```
+
+# Citations
+
+Robert K. Nelson, LaDale Winling, Richard Marciano, Nathan Connolly, et al., “Mapping Inequality,” American Panorama, ed. Robert K. Nelson and Edward L. Ayers, accessed October 17, 2023, https://dsl.richmond.edu/panorama/redlining/
+
