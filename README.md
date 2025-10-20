@@ -16,29 +16,10 @@ structure:
 - [Redlining in Los Angeles County Quarto
 document](https://github.com/IsabellaSegarra/eds-223-hw-2/blob/b1b04caf35bf17c57a0af7a899bcc9ca5fbf9884/Redlining_LA.qmd):
 Contains the rendered map and figures as an HTML. 
-- [LA Redlining PDF](link) 
+- [LA Redlining PDF](https://github.com/IsabellaSegarra/eds-223-hw-2/blob/b7711cd5496bc8364acbec515f2081aced28409b/Redlining_LA.pdf) 
+- figs: Contains the final figures of this project. 
+- data: Contains all the data for this project.
 
-.
-├── data
-│   ├── ejscreen
-│   │   ├── EJSCREEN_2023_BG_Columns.xlsx
-│   │   ├── EJSCREEN_2023_BG_StatePct_with_AS_CNMI_GU_VI.gdb
-│   │   └── ejscreen-tech-doc-version-2-2.pdf
-│   ├── gbif-birds-LA
-│   └── mapping-inequality
-│       └── mapping-inequality-los-angeles.json
-├── eds-223-hw-2.Rproj
-├── figs
-│   ├── low_income_grade_plot.png
-│   ├── percent_grade_census.png
-│   └── pm_25_grade_plot.png
-├── README.md
-├── Redlining_LA_files
-│   └── figure-pdf
-│       ├── unnamed-chunk-3-1.pdf
-│       └── unnamed-chunk-3-2.pdf
-├── Redlining_LA.qmd
-└── Redlining_LA.rmarkdown
 
 
 ## How to access the data:
