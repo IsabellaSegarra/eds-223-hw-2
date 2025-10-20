@@ -11,12 +11,18 @@ execute:
   message: false
 ---
 
+
+
+
 # EDS-223 Homework Assignment #2
 
 ### Objective
 In this project, I investigated the Homeowner's Owners’ Loan Corporation (HOLC) or *redlining* in Los Angeles County. I am tasked with producing a map of HOLC grades in LA county as well as looking at the relationship between redlining and environmental justice. In addition, I investigated biodiversity observations by HOLC grade to see the relationship between community science and redlined regions. 
 
 ## Environment Set-up 
+
+
+
 ```{r}
 #| output: false
 #| message: false
@@ -33,7 +39,13 @@ library(testthat) # For efficient workflows
 
 ```
 
+
+
+
 ## Load in Data 
+
+
+
 ```{r}
 #| output: false
 #| message: false
@@ -49,12 +61,18 @@ bird_obs <- sf::st_read(here::here("data", "gbif-birds-LA", "gbif-birds-LA.shp")
 
 ```
 
+
+
+
 ## Part 1: Legacy of redlining in current environmental (in)justice
 
 ### Objective: 
 Explore historical redlining in Los Angeles and its legacy on present-day environmental justice.
 
 #### Map 1: Historical Redlining of Neighborhoods in Los Angeles, CA
+
+
+
 
 ```{r}
 #......Create a map of historical redlining neighborhoods......
@@ -81,10 +99,16 @@ redlining_map # View map
 tmap_save(redlining_map, here("redlining_map.png"))
 
 ```
+
+
+
 ### Data Wrangling
 
 #### CRS Matching 
 In order to work with the EJ Screen and Redlining/HOLC dataset as one dataset, I need to first check if the coordinate refrence system (CRS) match. 
+
+
+
 ```{r}
 #| output: false
 
@@ -128,8 +152,14 @@ if(st_crs(bird_obs) == st_crs(redlining)){
 
 ```
 
+
+
+
 #### Filtering 
 For the purposes of this assignment, the EJ Screen data only needs to show Los Angeles County.
+
+
+
 ```{r}
 #......Filter EJ Screen data......
 
@@ -142,8 +172,14 @@ la_ejscreen <- ejscreen_transform %>%
 ```
 
 
+
+
+
 #### CRS Matching 
 In order to combine the EJ Screen and the Redlining data, I need to make sure there are no invalid geometries that can prevent the joining of the data. 
+
+
+
 ```{r}
 #| output: false
 
@@ -182,7 +218,6 @@ test_that("All geometries in redlining are valid", {
 
 ```
 
-
 ```{r}
 #| output: false 
 
@@ -200,8 +235,14 @@ test_that("All geometries in bird_obs are valid", {
 }) 
 ```
 
+
+
+
 #### Join Data
 Now, finally join the data!
+
+
+
 ```{r}
 #......Join Los Angeles ejscreen with redlining data......
 
@@ -214,7 +255,13 @@ la_redlining <- st_join(x = redlining, y = la_ejscreen, join = st_intersects) %>
 #head(la_redlining)
 ```
 
+
+
+
 ### Summary tables
+
+
+
 ```{r}
 #........Summary tables........
 
@@ -269,9 +316,15 @@ sum_holc
 
 ```
 
+
+
+
 #### Visualizations 
 
 ##### % Low Income 
+
+
+
 ```{r}
 # Group the 'la_redlining' data by HOLC grade and get the mean of the 'lowincome' variable.
 
@@ -297,7 +350,13 @@ ggsave(here::here("figs", "low_income_grade_plot.png"))
 
 ```
 
+
+
+
 ##### Percentile Particle Matter 2.5 
+
+
+
 ```{r}
 # Group the 'la_redlining' data by HOLC grade and get the mean of the 'pm25' variable.
 
@@ -323,12 +382,18 @@ pm_25_grade_plot
 # Save figure 
 ggsave(here::here("figs", "pm_25_grade_plot.png"))
 ```
+
+
+
 #### My results
 
 In the graph "Percentage of Low-Income Residents by HOLC Grade in Los Angeles County", we see that HOLC grades C-D have more low-income residents. This coincides with the Home Owners’Loan Corporation zoning that led to reduced investments in grades C and D (University of Richmond, 2023). This reducing in investments and subsequent "redlining" led to a reduced income for residents in those regions of Los Angeles county. In addition to reduced income and limited community resources, these communities also face environmental injusticies. In the graph "PM2.5 Concentrations by HOLC Grade in Los Angeles County", we see that all Los Angeles counties had an average of 10 µm of particulate matter 2.5 (PM 2.5) pollution. This reflects the present-day pollution issue within Los Angeles county. In the context of the HOLC grade, those in grades C and D show a slightly higher average of PM 2.5, displaying once again, the relationship between environmental justice and limited resources in communities that are within the redlining districts. 
 
 
 ## Part 2: Legacy of redlining in biodiversity observations
+
+
+
 
 ```{r}
 #........Join redlining with birds.........
@@ -367,5 +432,9 @@ bird_grade_plot
 ggsave(here::here("figs", "bird_grade_plot.png"))
 ```
 
+
+
+
 The graph above shows that HOLC grade C has the most bird observations, which contradicts the statements in Ellis-Soto et.al 2023 which say less bird observations in historically redlined zones (i.e. zones C-D). This can be due to the other factors that influence biodiversity that were included in Ellis-Soto's study -- vegetation, open space, population density, and climate. Although we looked at population density, these other factors can truly reveal how thriving the biodiversity is in these redlined regions. 
+
 
