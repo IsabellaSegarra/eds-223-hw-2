@@ -30,6 +30,7 @@ library(tidyverse) # For data cleaning
 library(dplyr) # For filtering data 
 library(paletteer) # For pretty colors 
 library(testthat) # For efficient workflows 
+library(kableExtra) # For nice tables
 
 ```
 
@@ -62,7 +63,7 @@ Explore historical redlining in Los Angeles and its legacy on present-day enviro
 redlining_map <- tm_shape(redlining) + # Map layer of redlined neighborhoods
   tm_borders() +
   tm_polygons(fill = "grade", 
-              palette = c("#003049", "#fcbf49", "#f77f00", "#d62828")) + # Fill in polygons based on HOLC grade
+              palette = c("#6a994e", "#0077b6", "#ffb703", "#c1121f")) + # Fill in polygons based on HOLC grade
   tm_legend(title = "HOLC Grade", size = 0.5) + # Add map legend
   tm_title(
     "Historical Redlining of Neighborhoods in Los Angeles, CA",
@@ -71,8 +72,8 @@ redlining_map <- tm_shape(redlining) + # Map layer of redlined neighborhoods
   ) + # Add title and subtitle
   tm_title("Data source: Digital Scholarship Lab (University of Richmond)") +
   #tm_graticules() +
-  tm_scalebar() + # Add scalebar
-  tm_compass(position = c("left", "bottom")) + # Add compass
+  tm_scalebar(size = 0.5) + # Add scalebar
+  tm_compass(position = c("left", "bottom"), size = 0.5) + # Add compass
   tm_basemap("CartoDB.PositronNoLabels") # Add basemap 
   
 redlining_map # View map
@@ -215,7 +216,8 @@ la_redlining <- st_join(x = redlining, y = la_ejscreen, join = st_intersects) %>
 ```
 
 ### Summary tables
-```{r}
+The percentage of census block groups that fall within each HOLC grade.
+```{r, fig.cap= "The Percentage of Census Block Groups within each HOLC grade"}
 #........Summary tables........
 
 # The percentage of census block groups that fall within each HOLC grade
@@ -230,8 +232,11 @@ census_block_grade <- la_redlining %>%
 
 percent_grade_census <- ggplot(census_block_grade, aes(x = grade, y = percent_grade_HOLC, fill = grade)) +
   geom_col() +
-  scale_fill_manual(values = c( "A" = "#003049", "B" = "#fcbf49", "C" = "#f77f00",
-                                "D" = "#d62828")) + 
+  scale_fill_manual(values = c( 
+    "A" = "#6a994e", 
+    "B" = "#0077b6", 
+    "C" = "#ffb703",
+    "D" = "#c1121f")) + 
   labs( x = "HOLC Grade", 
        y = "Percent of Census Groups in HOLC Grade", 
        title = "Percentage of Census Block Groups within each HOLC Grade in LA County") +
@@ -263,10 +268,32 @@ census_block_no_grade <- la_redlining_disjoin %>%
 # Combine the 'census_block_grade' and 'census_block_no_grade' 
 sum_holc<- full_join(census_block_grade,census_block_no_grade, by = "grade") 
 
-# View table
-sum_holc
+
+```
+
+```{r}
+#| echo: false
+
+# Define columns
+holc_grade <- c("A", "B", "C", "D", "NA")
+percent_grade_HOLC <- sum_holc$percent_grade_HOLC
+percent_not_HOLC <- sum_holc$percent_not_HOLC
+
+# Define coefficients (one per model)
+coef <- c(beta_1_pop, beta_1_1, beta_1_2, beta_1_3)
 
 
+# Combine into a table
+holc_table <- data.frame(
+  holc_grade,
+  percent_grade_HOLC,
+  percent_not_HOLC
+)
+
+# Put together with ‘kableExtra’
+holc_table %>%
+  kable(col.names = c("HOLC grade", "% HOLC Grades in Census", "% HOLC Grades not in Census"), caption = "Table 1. Census Block Groups and HOLC Grades") %>%
+  kable_styling(bootstrap_options = "striped", full_width = FALSE)
 ```
 
 #### Visualizations 
@@ -282,8 +309,11 @@ low_income <- la_redlining %>% group_by(grade) %>%
 
 low_income_grade_plot <- ggplot(low_income, aes(x = grade, y = low_income_mean, fill = grade)) +
   geom_col() +
-  scale_fill_manual(values = c( "A" = "#003049", "B" = "#fcbf49", "C" = "#f77f00",
-                                "D" = "#d62828")) +
+  scale_fill_manual(values = c( 
+    "A" = "#6a994e", 
+    "B" = "#0077b6", 
+    "C" = "#ffb703",
+    "D" = "#c1121f")) + 
   labs( x = "HOLC Grade", 
        y = "Percent Low Income", 
        title = "Percentage of Low-Income Residents by HOLC Grade in Los Angeles County") +
@@ -310,8 +340,11 @@ pm_25_grade_plot <- ggplot(pm_25_grade, aes(x = grade, y = pm_25_mean, fill = gr
   geom_col() +
  stat_summary(fun = mean, geom = "point",
                color = "black", shape = 18, size = 1) + 
-  scale_fill_manual(values = c( "A" = "#003049", "B" = "#fcbf49", "C" = "#f77f00",
-                                "D" = "#d62828")) +
+   scale_fill_manual(values = c( 
+    "A" = "#6a994e", 
+    "B" = "#0077b6", 
+    "C" = "#ffb703",
+    "D" = "#c1121f")) + 
   labs( x = "HOLC Grade", 
        y = "Particulate Matter 2.5 (µm) ", 
        title = "PM2.5 Concentrations by HOLC Grade in Los Angeles County") +
@@ -353,8 +386,11 @@ grade_bird <- bird_redlining %>%
 # Plot 'grade_bird' data
 bird_grade_plot <- ggplot(grade_bird, aes(x = grade, y = perc_grade, fill = grade)) +
   geom_col() +
-  scale_fill_manual(values = c( "A" = "#003049", "B" = "#fcbf49", "C" = "#f77f00",
-                                "D" = "#d62828")) +
+   scale_fill_manual(values = c( 
+    "A" = "#6a994e", 
+    "B" = "#0077b6", 
+    "C" = "#ffb703",
+    "D" = "#c1121f")) + 
   labs( x = "HOLC Grade", 
        y = "Bird Observations ", 
        title = "Bird Observations within each HOLC Grade in LA County") +
