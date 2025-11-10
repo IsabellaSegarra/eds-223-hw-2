@@ -1,7 +1,7 @@
 ---
 title: "Exploring Patterns of Environmental Justice: Redlining and Biodiversity"
 author: "Isabella Segarra"
-date: 10-19-2025
+date: 11-10-2025
 format: 
   pdf: default 
   html: default
@@ -11,7 +11,7 @@ execute:
   message: false
 ---
 
-# EDS-223 Homework Assignment #2
+# Exploring Patterns of Environmental Justice: Redlining and Biodiversity 
 
 ### Objective
 In this project, I investigated the Homeowner's Owners’ Loan Corporation (HOLC) or *redlining* in Los Angeles County. I am tasked with producing a map of HOLC grades in LA county as well as looking at the relationship between redlining and environmental justice. In addition, I investigated biodiversity observations by HOLC grade to see the relationship between community science and redlined regions. 
@@ -85,7 +85,7 @@ tmap_save(redlining_map, here("redlining_map.png"))
 ### Data Wrangling
 
 #### CRS Matching 
-In order to work with the EJ Screen and Redlining/HOLC dataset as one dataset, I need to first check if the coordinate refrence system (CRS) match. 
+In order to work with the EJ Screen and Redlining/HOLC dataset as one dataset, I need to first check if the coordinate reference system (CRS) match. 
 ```{r}
 #| output: false
 
@@ -217,7 +217,7 @@ la_redlining <- st_join(x = redlining, y = la_ejscreen, join = st_intersects) %>
 
 ### Summary tables
 The percentage of census block groups that fall within each HOLC grade.
-```{r, fig.cap= "The Percentage of Census Block Groups within each HOLC grade"}
+```{r}
 #........Summary tables........
 
 # The percentage of census block groups that fall within each HOLC grade
@@ -239,7 +239,7 @@ percent_grade_census <- ggplot(census_block_grade, aes(x = grade, y = percent_gr
     "D" = "#c1121f")) + 
   labs( x = "HOLC Grade", 
        y = "Percent of Census Groups in HOLC Grade", 
-       title = "Percentage of Census Block Groups within each HOLC Grade in LA County") +
+       title = "Census Block Groups within each HOLC Grade in LA County") +
   theme_minimal()
 
 # View figure
@@ -278,10 +278,6 @@ sum_holc<- full_join(census_block_grade,census_block_no_grade, by = "grade")
 holc_grade <- c("A", "B", "C", "D", "NA")
 percent_grade_HOLC <- sum_holc$percent_grade_HOLC
 percent_not_HOLC <- sum_holc$percent_not_HOLC
-
-# Define coefficients (one per model)
-coef <- c(beta_1_pop, beta_1_1, beta_1_2, beta_1_3)
-
 
 # Combine into a table
 holc_table <- data.frame(
